@@ -10,6 +10,7 @@ use CiWoocommerce\Hooks\WooCommerceHooks;
 use CiWoocommerce\Migrations\CreateOutboxTable;
 use CiWoocommerce\Services\DatabaseMigrationService;
 use CiWoocommerce\Services\PluginService;
+use Automattic\WooCommerce\Utilities\FeaturesUtil;
 
 final class MainCiWoocommerce {
 
@@ -29,6 +30,7 @@ final class MainCiWoocommerce {
 
 	public function actions(): void {
 		add_action('plugins_loaded', [$this, 'wp_init']);
+		add_action('before_woocommerce_init', [$this, 'declare_hpos_compatibility']);
 
 		if (is_admin()) {
 			/* @var Admin $admin */
@@ -38,6 +40,12 @@ final class MainCiWoocommerce {
 
 		$this->hooks();
 		$this->crons();
+	}
+
+	public function declare_hpos_compatibility(): void {
+		if (class_exists(FeaturesUtil::class)) {
+			FeaturesUtil::declare_compatibility('custom_order_tables', $this->plugin_file, true);
+		}
 	}
 
 	public function wp_init(): void {

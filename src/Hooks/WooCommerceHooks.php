@@ -142,16 +142,19 @@ final class WooCommerceHooks {
 	}
 
 	public function onUserRegister($userId): void {
-		$this->trackUserIdentified((int) $userId);
+		$userId = (int) $userId;
+		$createdByAdmin = is_admin() && get_current_user_id() !== $userId;
+
+		$this->trackUserIdentified($userId, !$createdByAdmin);
 	}
 
-	private function trackUserIdentified(int $userId): void {
+	private function trackUserIdentified(int $userId, bool $attachAnonymousId = true): void {
 		$id = $this->mapper->customerId($userId);
 		if ($id === null) {
 			return;
 		}
 
-		$this->tracker->track($this->mapper->userIdentified($id, $this->currentAnonymousId()));
+		$this->tracker->track($this->mapper->userIdentified($id, $attachAnonymousId ? $this->currentAnonymousId() : null));
 	}
 
 	private function trackOrderCompleted($order): void {
