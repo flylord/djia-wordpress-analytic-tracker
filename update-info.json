@@ -1,0 +1,9 @@
+{
+	"version": "1.0.0",
+	"homepage": "https://biznis.co.rs/pluginovi/",
+	"zip": "ci-woocommerce.zip",
+	"requires_wp": "6.2",
+	"requires_php": "7.4",
+	"sha256": "",
+	"changelog": ""
+}
