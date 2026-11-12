@@ -1,12 +1,12 @@
 # Commerce Intelligence for WooCommerce
 
-Sends WooCommerce server events (cart, orders, payments, refunds, logins) to the Commerce Intelligence collector. Wraps the PHP library in `app/php-sdk`.
+Sends WooCommerce server events (cart, orders, payments, refunds, logins) to the Commerce Intelligence collector. Wraps the PHP library [`djia/php-analytic-tracker`](https://packagist.org/packages/djia/php-analytic-tracker).
 
 Requires PHP 7.4, WordPress 6.2, WooCommerce 7.0.
 
 ## Install
 
-1. In this folder run `composer install --no-dev`. The SDK is copied from `../../php-sdk` (no symlink) into `vendor/`.
+1. In this folder run `composer install --no-dev`. The SDK is installed from Packagist into `vendor/`.
 2. Copy the folder `ci-woocommerce` into `wp-content/plugins/` (without `tests/`, `phpunit.xml`) and activate it.
 3. Open Settings, Commerce Intelligence and enter the collector URL (default `http://ci-collector:8080`), key id and secret. Until a key id and secret are saved, no event is recorded.
 
