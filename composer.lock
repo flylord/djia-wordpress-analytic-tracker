@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "00ad682da1922905ffd2b16a7e0ef174",
+    "content-hash": "2a2ad167378ac3e42fcaeecfdaf43e9f",
     "packages": [
         {
-            "name": "commerce-intelligence/php-sdk",
+            "name": "djia/php-analytic-tracker",
             "version": "dev-master",
             "dist": {
                 "type": "path",
                 "url": "../../php-sdk",
-                "reference": "0a8848e85719c6c11d863ba3a6cab6754443c336"
+                "reference": "b0c44a7cc0424ff8cf0408ef6a12008164dc1cd9"
             },
             "require": {
                 "ext-curl": "*",
@@ -1825,7 +1825,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "commerce-intelligence/php-sdk": 20
+        "djia/php-analytic-tracker": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
