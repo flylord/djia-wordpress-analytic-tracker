@@ -26,7 +26,7 @@ if (!defined('ABSPATH')) {
 }
 
 const CI_WOOCOMMERCE_VERSION = '1.0.0';
-define('CI_WOOCOMMERCE_DEVELOP', true); //have to be with define because of deploy script
+define('CI_WOOCOMMERCE_DEVELOP', false); //have to be with define because of deploy script
 
 include_once __DIR__ . '/ci-woocommerce-config.php';
 

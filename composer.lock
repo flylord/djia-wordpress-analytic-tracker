@@ -4,21 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d8a063a014c0247665270221c245ef83",
+    "content-hash": "20cb7b0a8a72b8b3c28700b25899756b",
     "packages": [
         {
             "name": "djia/php-analytic-tracker",
-            "version": "v1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/flylord/djia-php-analytic-tracker.git",
-                "reference": "5b5b7c8fedb8e639e14bfac1218a964317b81978"
-            },
+            "version": "dev-master",
             "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/flylord/djia-php-analytic-tracker/zipball/5b5b7c8fedb8e639e14bfac1218a964317b81978",
-                "reference": "5b5b7c8fedb8e639e14bfac1218a964317b81978",
-                "shasum": ""
+                "type": "path",
+                "url": "../../php-sdk",
+                "reference": "6c27f4533bd0c5045e73667e89f126e75a979e66"
             },
             "require": {
                 "ext-curl": "*",
@@ -36,16 +30,19 @@
                     "CommerceIntelligence\\Sdk\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "CommerceIntelligence\\Sdk\\Tests\\": "tests/"
+                }
+            },
             "license": [
                 "MIT"
             ],
             "description": "PHP integration library for sending signed server events to the Commerce Intelligence collector",
-            "support": {
-                "issues": "https://github.com/flylord/djia-php-analytic-tracker/issues",
-                "source": "https://github.com/flylord/djia-php-analytic-tracker/tree/v1.0.0"
-            },
-            "time": "2026-11-12T20:45:04+00:00"
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
         }
     ],
     "packages-dev": [
@@ -1832,7 +1829,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "djia/php-analytic-tracker": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

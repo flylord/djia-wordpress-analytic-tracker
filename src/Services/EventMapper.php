@@ -4,86 +4,100 @@ declare(strict_types=1);
 namespace CiWoocommerce\Services;
 
 use CommerceIntelligence\Sdk\Event;
+use CommerceIntelligence\Sdk\Events;
 
 final class EventMapper {
 
-	public function addToCart(int $productId, int $variationId, int $quantity, float $price, int $decimals, string $currency, ?string $anonymousId, ?string $userId): Event {
-		return Event::create('product_added_to_cart', [
-			'product_id' => $productId,
-			'variation_id' => $variationId,
+	public function addToCart(int $productId, int $variationId, int $quantity, string $price, string $currency, ?string $anonymousId, ?string $userId, ?string $sessionId = null): Event {
+		return Event::create('product_added_to_cart', array_merge($this->productIds($productId, $variationId), [
 			'quantity' => $quantity,
-			'unit_price' => $this->minorUnits($price, $decimals),
+			'unit_price' => Events::minorUnits($price, $currency),
 			'currency' => $currency,
-		], $anonymousId, $userId);
+		]), $anonymousId, $userId, $sessionId);
 	}
 
-	public function removeFromCart(int $productId, int $variationId, int $quantity, ?string $anonymousId, ?string $userId): Event {
-		return Event::create('product_removed_from_cart', [
-			'product_id' => $productId,
-			'variation_id' => $variationId,
+	public function removeFromCart(int $productId, int $variationId, int $quantity, ?string $anonymousId, ?string $userId, ?string $sessionId = null): Event {
+		return Event::create('product_removed_from_cart', array_merge($this->productIds($productId, $variationId), [
 			'quantity' => $quantity,
-		], $anonymousId, $userId);
+		]), $anonymousId, $userId, $sessionId);
 	}
 
 	/**
-	 * @param array<int, array{product_id: int, variation_id: int, quantity: int, unit_price: float}> $items
+	 * @param array<int, array{product_id: int, variation_id: int, quantity: int, unit_price: string}> $items
 	 */
-	public function orderCompleted(int $orderId, array $items, float $total, int $decimals, string $currency, ?string $anonymousId, ?string $userId): Event {
+	public function orderCompleted(int $orderId, array $items, string $total, string $currency, ?string $anonymousId, ?string $userId, ?string $sessionId = null): Event {
 		$mapped = [];
 		foreach ($items as $item) {
-			$mapped[] = [
-				'product_id' => (int) $item['product_id'],
-				'variation_id' => (int) $item['variation_id'],
+			$mapped[] = array_merge($this->productIds((int) $item['product_id'], (int) $item['variation_id']), [
 				'quantity' => (int) $item['quantity'],
-				'unit_price' => $this->minorUnits((float) $item['unit_price'], $decimals),
-			];
+				'unit_price' => Events::minorUnits((string) $item['unit_price'], $currency),
+			]);
 		}
 
 		return Event::create('order_completed', [
-			'order_id' => $orderId,
+			'order_id' => (string) $orderId,
 			'items' => $mapped,
-			'revenue' => $this->minorUnits($total, $decimals),
+			'revenue' => Events::minorUnits($total, $currency),
 			'currency' => $currency,
-		], $anonymousId, $userId);
+		], $anonymousId, $userId, $sessionId);
 	}
 
-	public function paymentConfirmed(int $orderId, float $amount, int $decimals, string $currency, string $method, ?string $anonymousId, ?string $userId): Event {
+	public function paymentConfirmed(int $orderId, string $amount, string $currency, string $method, ?string $anonymousId, ?string $userId, ?string $sessionId = null): Event {
 		return Event::create('payment_confirmed', [
-			'order_id' => $orderId,
-			'amount' => $this->minorUnits($amount, $decimals),
+			'order_id' => (string) $orderId,
+			'amount' => Events::minorUnits($amount, $currency),
 			'currency' => $currency,
 			'method' => $method,
-		], $anonymousId, $userId);
+		], $anonymousId, $userId, $sessionId);
 	}
 
-	public function orderCancelled(int $orderId, string $reason, ?string $anonymousId, ?string $userId): Event {
-		return Event::create('order_cancelled', [
-			'order_id' => $orderId,
-			'reason' => $reason,
-		], $anonymousId, $userId);
+	public function orderCancelled(int $orderId, string $status, string $reason, ?string $anonymousId, ?string $userId): Event {
+		$properties = ['order_id' => (string) $orderId, 'status' => $status];
+		if ($reason !== '') {
+			$properties['reason'] = $reason;
+		}
+
+		return Event::create('order_cancelled', $properties, $anonymousId, $userId);
+	}
+
+	public function cancellationStatus(string $fromStatus, string $note): string {
+		$note = strtolower($note);
+		if (strpos($note, 'time limit reached') !== false) {
+			return 'payment_timeout';
+		}
+		if ($fromStatus === 'failed') {
+			return 'payment_failed';
+		}
+		if (strpos($note, 'cancelled by customer') !== false) {
+			return 'customer_cancelled';
+		}
+
+		return 'merchant_cancelled';
 	}
 
 	/**
-	 * @param array<int, array{product_id: int, variation_id: int, quantity: int, amount: float}> $items
+	 * @param array<int, array{product_id: int, variation_id: int, quantity: int, amount: string}> $items
 	 */
-	public function orderRefunded(int $orderId, int $refundId, float $amount, array $items, int $decimals, string $currency, ?string $anonymousId, ?string $userId): Event {
+	public function orderRefunded(int $orderId, int $refundId, string $amount, array $items, string $currency, ?string $anonymousId, ?string $userId): Event {
 		$mapped = [];
 		foreach ($items as $item) {
-			$mapped[] = [
-				'product_id' => (int) $item['product_id'],
-				'variation_id' => (int) $item['variation_id'],
+			$mapped[] = array_merge($this->productIds((int) $item['product_id'], (int) $item['variation_id']), [
 				'quantity' => (int) $item['quantity'],
-				'amount' => $this->minorUnits((float) $item['amount'], $decimals),
-			];
+				'amount' => Events::minorUnits((string) $item['amount'], $currency),
+			]);
 		}
 
-		return Event::create('order_refunded', [
-			'order_id' => $orderId,
-			'refund_id' => $refundId,
-			'amount' => $this->minorUnits($amount, $decimals),
+		$properties = [
+			'order_id' => (string) $orderId,
+			'refund_id' => (string) $refundId,
+			'amount' => Events::minorUnits($amount, $currency),
 			'currency' => $currency,
-			'items' => $mapped,
-		], $anonymousId, $userId);
+		];
+		if ($mapped !== []) {
+			$properties['items'] = $mapped;
+		}
+
+		return Event::create('order_refunded', $properties, $anonymousId, $userId);
 	}
 
 	public function userIdentified(string $userId, ?string $anonymousId): Event {
@@ -94,7 +108,15 @@ final class EventMapper {
 		return $id > 0 ? (string) $id : null;
 	}
 
-	private function minorUnits(float $price, int $decimals): int {
-		return (int) round($price * 10 ** $decimals);
+	/**
+	 * @return array<string, string>
+	 */
+	private function productIds(int $productId, int $variationId): array {
+		$ids = ['product_id' => (string) $productId];
+		if ($variationId > 0) {
+			$ids['variation_id'] = (string) $variationId;
+		}
+
+		return $ids;
 	}
 }

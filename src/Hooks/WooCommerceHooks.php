@@ -10,6 +10,7 @@ use WC_Order;
 
 final class WooCommerceHooks {
 	public const ANONYMOUS_ID_META = '_ci_anonymous_id';
+	public const SESSION_ID_META = '_ci_session_id';
 	public const COMPLETED_META = '_ci_order_completed_tracked';
 
 	private EventMapper $mapper;
@@ -44,11 +45,11 @@ final class WooCommerceHooks {
 			(int) $productId,
 			$variationId,
 			(int) $quantity,
-			(float) $product->get_price(),
-			wc_get_price_decimals(),
+			wc_format_decimal($product->get_price(), false, false),
 			get_woocommerce_currency(),
 			$this->currentAnonymousId(),
-			$this->mapper->customerId(get_current_user_id())
+			$this->mapper->customerId(get_current_user_id()),
+			$this->currentSessionId()
 		));
 	}
 
@@ -63,7 +64,8 @@ final class WooCommerceHooks {
 			(int) ($removed['variation_id'] ?? 0),
 			(int) ($removed['quantity'] ?? 0),
 			$this->currentAnonymousId(),
-			$this->mapper->customerId(get_current_user_id())
+			$this->mapper->customerId(get_current_user_id()),
+			$this->currentSessionId()
 		));
 	}
 
@@ -83,12 +85,12 @@ final class WooCommerceHooks {
 
 		$this->tracker->track($this->mapper->paymentConfirmed(
 			$order->get_id(),
-			(float) $order->get_total(),
-			wc_get_price_decimals(),
+			wc_format_decimal($order->get_total(), false, false),
 			$order->get_currency(),
 			(string) $order->get_payment_method(),
 			$this->orderAnonymousId($order),
-			$this->mapper->customerId($order->get_customer_id())
+			$this->mapper->customerId($order->get_customer_id()),
+			$this->orderSessionId($order)
 		));
 	}
 
@@ -99,9 +101,11 @@ final class WooCommerceHooks {
 		}
 
 		$reason = is_array($transition) && isset($transition['note']) && is_string($transition['note']) ? $transition['note'] : '';
+		$from = is_array($transition) && isset($transition['from']) && is_string($transition['from']) ? $transition['from'] : '';
 
 		$this->tracker->track($this->mapper->orderCancelled(
 			$order->get_id(),
+			$this->mapper->cancellationStatus($from, $reason),
 			$reason,
 			$this->orderAnonymousId($order),
 			$this->mapper->customerId($order->get_customer_id())
@@ -121,16 +125,15 @@ final class WooCommerceHooks {
 				'product_id' => (int) $item->get_product_id(),
 				'variation_id' => (int) $item->get_variation_id(),
 				'quantity' => abs((int) $item->get_quantity()),
-				'amount' => abs((float) $item->get_total()),
+				'amount' => wc_format_decimal(abs((float) $item->get_total() + (float) $item->get_total_tax()), false, false),
 			];
 		}
 
 		$this->tracker->track($this->mapper->orderRefunded(
 			$order->get_id(),
 			(int) $refundId,
-			abs((float) $refund->get_amount()),
+			wc_format_decimal(abs((float) $refund->get_amount()), false, false),
 			$items,
-			wc_get_price_decimals(),
 			$order->get_currency(),
 			$this->orderAnonymousId($order),
 			$this->mapper->customerId($order->get_customer_id())
@@ -166,6 +169,10 @@ final class WooCommerceHooks {
 		if ($anonymousId !== null) {
 			$order->update_meta_data(self::ANONYMOUS_ID_META, $anonymousId);
 		}
+		$sessionId = $this->currentSessionId();
+		if ($sessionId !== null) {
+			$order->update_meta_data(self::SESSION_ID_META, $sessionId);
+		}
 		$order->update_meta_data(self::COMPLETED_META, '1');
 		$order->save();
 
@@ -176,18 +183,18 @@ final class WooCommerceHooks {
 				'product_id' => (int) $item->get_product_id(),
 				'variation_id' => (int) $item->get_variation_id(),
 				'quantity' => (int) $item->get_quantity(),
-				'unit_price' => (float) $item->get_total() / $quantity,
+				'unit_price' => wc_format_decimal(((float) $item->get_total() + (float) $item->get_total_tax()) / $quantity, 6, false),
 			];
 		}
 
 		$this->tracker->track($this->mapper->orderCompleted(
 			$order->get_id(),
 			$items,
-			(float) $order->get_total(),
-			wc_get_price_decimals(),
+			wc_format_decimal($order->get_total(), false, false),
 			$order->get_currency(),
 			$anonymousId,
-			$this->mapper->customerId($order->get_customer_id())
+			$this->mapper->customerId($order->get_customer_id()),
+			$sessionId
 		));
 	}
 
@@ -195,6 +202,16 @@ final class WooCommerceHooks {
 		$stored = $order->get_meta(self::ANONYMOUS_ID_META);
 
 		return is_string($stored) && $stored !== '' ? $stored : null;
+	}
+
+	private function orderSessionId(WC_Order $order): ?string {
+		$stored = $order->get_meta(self::SESSION_ID_META);
+
+		return is_string($stored) && $stored !== '' ? $stored : null;
+	}
+
+	private function currentSessionId(): ?string {
+		return Visitor::sessionId(wp_unslash($_COOKIE));
 	}
 
 	private function currentAnonymousId(): ?string {
