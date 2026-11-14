@@ -43,6 +43,12 @@ final class EventMapperTest extends TestCase {
 		$this->assertSame(1999, $data['properties']['unit_price']);
 	}
 
+	public function testEmptyPriceIsZero(): void {
+		$data = $this->mapper->addToCart(1, 0, 1, '', 'EUR', null, null)->toArray();
+
+		$this->assertSame(0, $data['properties']['unit_price']);
+	}
+
 	public function testMoneyUsesIsoExponentNotShopDecimals(): void {
 		$jpy = $this->mapper->addToCart(1, 0, 1, '1500', 'JPY', null, null)->toArray();
 		$kwd = $this->mapper->addToCart(1, 0, 1, '1.234', 'KWD', null, null)->toArray();

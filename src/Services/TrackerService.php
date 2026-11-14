@@ -31,6 +31,10 @@ final class TrackerService {
 		$this->pending = true;
 	}
 
+	public function recordError(Throwable $error): void {
+		$this->settings->recordError($error);
+	}
+
 	public function flush(int $max = 100): int {
 		$client = $this->client();
 

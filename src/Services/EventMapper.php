@@ -11,7 +11,7 @@ final class EventMapper {
 	public function addToCart(int $productId, int $variationId, int $quantity, string $price, string $currency, ?string $anonymousId, ?string $userId, ?string $sessionId = null): Event {
 		return Event::create('product_added_to_cart', array_merge($this->productIds($productId, $variationId), [
 			'quantity' => $quantity,
-			'unit_price' => Events::minorUnits($price, $currency),
+			'unit_price' => Events::minorUnits($price === '' ? '0' : $price, $currency),
 			'currency' => $currency,
 		]), $anonymousId, $userId, $sessionId);
 	}

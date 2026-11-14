@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CiWoocommerce\Hooks;
 
+use CiWoocommerce\Services\EventGuard;
 use CiWoocommerce\Services\EventMapper;
 use CiWoocommerce\Services\TrackerService;
 use CommerceIntelligence\Sdk\Visitor;
@@ -15,10 +16,12 @@ final class WooCommerceHooks {
 
 	private EventMapper $mapper;
 	private TrackerService $tracker;
+	private EventGuard $guard;
 
-	public function __construct(EventMapper $mapper, TrackerService $tracker) {
+	public function __construct(EventMapper $mapper, TrackerService $tracker, EventGuard $guard) {
 		$this->mapper = $mapper;
 		$this->tracker = $tracker;
+		$this->guard = $guard;
 	}
 
 	public function init(): void {
@@ -35,6 +38,12 @@ final class WooCommerceHooks {
 	}
 
 	public function onAddToCart($cartItemKey, $productId, $quantity, $variationId): void {
+		$this->guard->run(function () use ($cartItemKey, $productId, $quantity, $variationId): void {
+			$this->handleAddToCart($cartItemKey, $productId, $quantity, $variationId);
+		}, [$this->tracker, 'recordError']);
+	}
+
+	private function handleAddToCart($cartItemKey, $productId, $quantity, $variationId): void {
 		$variationId = (int) $variationId;
 		$product = wc_get_product($variationId > 0 ? $variationId : (int) $productId);
 		if (!$product) {
@@ -54,6 +63,12 @@ final class WooCommerceHooks {
 	}
 
 	public function onCartItemRemoved($cartItemKey, $cart): void {
+		$this->guard->run(function () use ($cartItemKey, $cart): void {
+			$this->handleCartItemRemoved($cartItemKey, $cart);
+		}, [$this->tracker, 'recordError']);
+	}
+
+	private function handleCartItemRemoved($cartItemKey, $cart): void {
 		$removed = isset($cart->removed_cart_contents[$cartItemKey]) ? $cart->removed_cart_contents[$cartItemKey] : null;
 		if (!is_array($removed)) {
 			return;
@@ -70,14 +85,32 @@ final class WooCommerceHooks {
 	}
 
 	public function onCheckoutOrderProcessed($orderId): void {
+		$this->guard->run(function () use ($orderId): void {
+			$this->handleCheckoutOrderProcessed($orderId);
+		}, [$this->tracker, 'recordError']);
+	}
+
+	private function handleCheckoutOrderProcessed($orderId): void {
 		$this->trackOrderCompleted(wc_get_order((int) $orderId));
 	}
 
 	public function onStoreApiOrderProcessed($order): void {
+		$this->guard->run(function () use ($order): void {
+			$this->handleStoreApiOrderProcessed($order);
+		}, [$this->tracker, 'recordError']);
+	}
+
+	private function handleStoreApiOrderProcessed($order): void {
 		$this->trackOrderCompleted($order);
 	}
 
 	public function onPaymentComplete($orderId): void {
+		$this->guard->run(function () use ($orderId): void {
+			$this->handlePaymentComplete($orderId);
+		}, [$this->tracker, 'recordError']);
+	}
+
+	private function handlePaymentComplete($orderId): void {
 		$order = wc_get_order((int) $orderId);
 		if (!$order instanceof WC_Order) {
 			return;
@@ -95,6 +128,12 @@ final class WooCommerceHooks {
 	}
 
 	public function onOrderCancelled($orderId, $order = null, $transition = null): void {
+		$this->guard->run(function () use ($orderId, $order, $transition): void {
+			$this->handleOrderCancelled($orderId, $order, $transition);
+		}, [$this->tracker, 'recordError']);
+	}
+
+	private function handleOrderCancelled($orderId, $order = null, $transition = null): void {
 		$order = $order instanceof WC_Order ? $order : wc_get_order((int) $orderId);
 		if (!$order instanceof WC_Order) {
 			return;
@@ -113,6 +152,12 @@ final class WooCommerceHooks {
 	}
 
 	public function onOrderRefunded($orderId, $refundId): void {
+		$this->guard->run(function () use ($orderId, $refundId): void {
+			$this->handleOrderRefunded($orderId, $refundId);
+		}, [$this->tracker, 'recordError']);
+	}
+
+	private function handleOrderRefunded($orderId, $refundId): void {
 		$order = wc_get_order((int) $orderId);
 		$refund = wc_get_order((int) $refundId);
 		if (!$order instanceof WC_Order || !$refund) {
@@ -141,10 +186,22 @@ final class WooCommerceHooks {
 	}
 
 	public function onLogin($userLogin, $user): void {
+		$this->guard->run(function () use ($userLogin, $user): void {
+			$this->handleLogin($userLogin, $user);
+		}, [$this->tracker, 'recordError']);
+	}
+
+	private function handleLogin($userLogin, $user): void {
 		$this->trackUserIdentified((int) ($user->ID ?? 0));
 	}
 
 	public function onUserRegister($userId): void {
+		$this->guard->run(function () use ($userId): void {
+			$this->handleUserRegister($userId);
+		}, [$this->tracker, 'recordError']);
+	}
+
+	private function handleUserRegister($userId): void {
 		$userId = (int) $userId;
 		$createdByAdmin = is_admin() && get_current_user_id() !== $userId;
 
