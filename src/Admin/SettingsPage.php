@@ -50,6 +50,8 @@ final class SettingsPage {
 			'publicKey' => $values['public_key'],
 			'trackerUrl' => $values['tracker_url'],
 			'snippet' => $this->installer->isInstalled() ? null : $this->installer->configuredSnippet(),
+			'unpublished' => $this->installer->hasUnpublishedChanges(),
+			'installFailed' => isset($_GET['installed']) && sanitize_text_field(wp_unslash($_GET['installed'])) === '0',
 			'lastError' => $error === null ? null : [
 				'message' => $error['message'],
 				'time' => $error['time']->format('Y-m-d H:i:s') . ' UTC',
@@ -72,9 +74,9 @@ final class SettingsPage {
 		$trackerUrl = isset($_POST['tracker_url']) ? esc_url_raw(sanitize_text_field(wp_unslash($_POST['tracker_url']))) : '';
 
 		$this->settings->save($endpoint, $keyId, $secret, $publicKey, $trackerUrl);
-		$this->installer->install();
+		$installed = $this->installer->install();
 
-		wp_safe_redirect(add_query_arg(['page' => self::SLUG, 'updated' => '1'], admin_url('options-general.php')));
+		wp_safe_redirect(add_query_arg(['page' => self::SLUG, 'updated' => '1', 'installed' => $installed ? '1' : '0'], admin_url('options-general.php')));
 		exit;
 	}
 }

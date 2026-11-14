@@ -12,6 +12,9 @@ final class SettingsTemplate {
 			<?php if (!empty($saved)) : ?>
 				<div class="notice notice-success is-dismissible"><p><?php echo esc_html__('Settings saved.', 'ci-woocommerce'); ?></p></div>
 			<?php endif; ?>
+			<?php if (!empty($installFailed)) : ?>
+				<div class="notice notice-warning"><p><?php echo esc_html__('The tracker was not installed in DJIA Builder site code. Paste the snippet below.', 'ci-woocommerce'); ?></p></div>
+			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
 				<input type="hidden" name="action" value="<?php echo esc_attr($action); ?>">
 				<?php wp_nonce_field($action, 'security'); ?>
@@ -44,6 +47,9 @@ final class SettingsTemplate {
 							<td>
 								<textarea id="ci-snippet" class="large-text code" rows="6" readonly><?php echo esc_textarea($snippet); ?></textarea>
 								<p class="description"><?php echo esc_html__('Paste into DJIA Builder, Site code, Body close', 'ci-woocommerce'); ?></p>
+								<?php if (!empty($unpublished)) : ?>
+									<p class="description"><?php echo esc_html__('DJIA Builder has unpublished global changes; paste this snippet or publish them first.', 'ci-woocommerce'); ?></p>
+								<?php endif; ?>
 							</td>
 						</tr>
 					<?php endif; ?>

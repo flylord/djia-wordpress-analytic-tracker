@@ -47,6 +47,10 @@ final class CatalogueHooks {
 		if (!$product instanceof WC_Product || $product->get_status() !== 'publish') {
 			return;
 		}
+		$parentId = (int) $product->get_parent_id();
+		if ($parentId > 0 && get_post_status($parentId) !== 'publish') {
+			return;
+		}
 
 		$data = $this->mapper->map($product);
 		if ($data === null) {

@@ -33,6 +33,7 @@ final class CatalogueMapperTest extends TestCase {
 
 		$this->assertSame('15', $data['product_id']);
 		$this->assertSame('16', $data['variation_id']);
+		$this->assertSame('https://shop.test/p/15', $data['url']);
 		$this->assertSame(1000, $data['price']);
 		$this->assertFalse($data['in_stock']);
 		$this->assertArrayNotHasKey('sku', $data);

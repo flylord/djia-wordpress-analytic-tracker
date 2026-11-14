@@ -53,6 +53,9 @@ final class SiteCodeInstaller {
 		}
 
 		try {
+			if ($this->hasUnpublishedChanges()) {
+				return false;
+			}
 			$this->write(function (array $scripts) use ($snippet): array {
 				$scripts = $this->without($scripts);
 				$scripts[] = [
@@ -84,7 +87,7 @@ final class SiteCodeInstaller {
 
 		try {
 			$repo = $this->service(self::GLOBALS);
-			if ($this->findItem($this->scripts($repo->draft())) === null) {
+			if ($this->findItem($this->scripts($repo->draft())) === null || $this->hasUnpublishedChanges()) {
 				return;
 			}
 			$this->write(function (array $scripts): array {
@@ -93,6 +96,52 @@ final class SiteCodeInstaller {
 		} catch (Throwable $error) {
 			$this->settings->recordError($error);
 		}
+	}
+
+	public function hasUnpublishedChanges(): bool {
+		if (!$this->builderAvailable()) {
+			return false;
+		}
+
+		try {
+			$repo = $this->service(self::GLOBALS);
+
+			return !self::equalApartFromItem($repo->draft(), $repo->published(), self::ITEM_ID);
+		} catch (Throwable $error) {
+			return false;
+		}
+	}
+
+	public static function equalApartFromItem(array $draft, array $published, string $itemId): bool {
+		return self::comparable($draft, $itemId) === self::comparable($published, $itemId);
+	}
+
+	private static function comparable(array $globals, string $itemId): string {
+		$plain = json_decode((string) json_encode($globals), true);
+		$plain = is_array($plain) ? $plain : [];
+		unset($plain['revision']);
+		$code = isset($plain['customCode']) && is_array($plain['customCode']) ? $plain['customCode'] : [];
+		if (isset($code['scripts']) && is_array($code['scripts'])) {
+			$code['scripts'] = array_values(array_filter($code['scripts'], static fn ($item): bool => !is_array($item) || ($item['id'] ?? null) !== $itemId));
+			if ($code['scripts'] === []) {
+				unset($code['scripts']);
+			}
+		}
+		if ($code === []) {
+			unset($plain['customCode']);
+		} else {
+			$plain['customCode'] = $code;
+		}
+
+		return (string) json_encode(self::sorted($plain));
+	}
+
+	private static function sorted(array $value): array {
+		if (array_keys($value) !== range(0, count($value) - 1)) {
+			ksort($value);
+		}
+
+		return array_map(static fn ($v) => is_array($v) ? self::sorted($v) : $v, $value);
 	}
 
 	public function isInstalled(): bool {

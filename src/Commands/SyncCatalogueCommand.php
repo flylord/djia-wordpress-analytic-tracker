@@ -53,6 +53,10 @@ final class SyncCatalogueCommand {
 				'order' => 'ASC',
 			]);
 			foreach ($products as $product) {
+				$parentId = (int) $product->get_parent_id();
+				if ($parentId > 0 && get_post_status($parentId) !== 'publish') {
+					continue;
+				}
 				$data = $this->mapper->map($product);
 				if ($data !== null) {
 					yield $data;

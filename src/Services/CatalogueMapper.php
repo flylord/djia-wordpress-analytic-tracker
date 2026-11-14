@@ -31,7 +31,7 @@ final class CatalogueMapper {
 
 		$data = [
 			'product_id' => (string) $catalogueId,
-			'url' => $this->source->permalink($id),
+			'url' => $this->source->permalink($catalogueId),
 			'title' => (string) $product->get_name(),
 			'category_path' => $this->source->categoryPath($catalogueId),
 			'price' => Events::minorUnits($price, $currency),

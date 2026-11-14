@@ -28,4 +28,24 @@ final class SiteCodeInstallerTest extends TestCase {
 	public function testInstallReturnsFalseWithoutDjiaBuilder(): void {
 		$this->assertFalse((new SiteCodeInstaller(new SettingsService()))->install());
 	}
+
+	public function testGlobalsEqual(): void {
+		$globals = ['revision' => 3, 'tokens' => ['color' => ['a' => '#fff']], 'customCode' => ['scripts' => [['id' => 'ga', 'html' => 'x']]]];
+
+		$this->assertTrue(SiteCodeInstaller::equalApartFromItem($globals, ['revision' => 2] + $globals, 'ci-tracker'));
+	}
+
+	public function testGlobalsEqualApartFromTrackerItem(): void {
+		$published = ['revision' => 2, 'customCode' => (object) []];
+		$draft = ['revision' => 3, 'customCode' => ['scripts' => [['id' => 'ci-tracker', 'html' => 'old']]]];
+
+		$this->assertTrue(SiteCodeInstaller::equalApartFromItem($draft, $published, 'ci-tracker'));
+	}
+
+	public function testGlobalsDifferent(): void {
+		$published = ['revision' => 2, 'tokens' => ['color' => ['a' => '#fff']]];
+		$draft = ['revision' => 3, 'tokens' => ['color' => ['a' => '#000']], 'customCode' => ['scripts' => [['id' => 'ci-tracker', 'html' => 'x']]]];
+
+		$this->assertFalse(SiteCodeInstaller::equalApartFromItem($draft, $published, 'ci-tracker'));
+	}
 }
