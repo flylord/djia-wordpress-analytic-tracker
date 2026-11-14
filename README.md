@@ -142,11 +142,11 @@ Server event. The catalogue feed: sent through the PHP SDK when a product is sav
 |---|---|---|---|
 | `product_id` | string | yes | Product id |
 | `variation_id` | string | no | Variation id, omitted when none |
-| `sku` | string | yes | Product SKU |
+| `sku` | string | no | Product SKU |
 | `url` | string | yes | Canonical product URL without query string |
 | `title` | string | yes | Product title |
 | `category_path` | string | yes | Category path, for example `Tools > Drills` |
-| `brand` | string | yes | Brand name |
+| `brand` | string | no | Brand name |
 | `price` | int | yes | Current price, minor units, including tax |
 | `currency` | string | yes | ISO code |
 | `in_stock` | bool | yes | Stock state |
@@ -350,7 +350,7 @@ Common properties of every assistant event:
 
 | Property | Type | Required | Meaning |
 |---|---|---|---|
-| `role` | string | yes | Author of the message |
+| `role` | string | yes | Author of the message: `user`, `assistant` |
 | `query_id` | string | no | Results render of the answer, when it showed products |
 | `intent` | string | no | Detected intent |
 | `constraints` | object | no | Constraints the assistant extracted |
