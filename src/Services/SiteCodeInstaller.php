@@ -108,7 +108,7 @@ final class SiteCodeInstaller {
 
 			return !self::equalApartFromItem($repo->draft(), $repo->published(), self::ITEM_ID);
 		} catch (Throwable $error) {
-			return false;
+			return true;
 		}
 	}
 

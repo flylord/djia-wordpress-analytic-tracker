@@ -48,4 +48,16 @@ final class SiteCodeInstallerTest extends TestCase {
 
 		$this->assertFalse(SiteCodeInstaller::equalApartFromItem($draft, $published, 'ci-tracker'));
 	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function testUnpublishedChangesFailClosedWhenRepositoryThrows(): void {
+		eval('namespace DjiaBuilder\Content\Documents; class GlobalsRepository {}');
+		eval('namespace DjiaBuilder\Pipeline\Publish; class Publisher {}');
+		eval('namespace DjiaBuilder\Core\System; class Container { public static function getInstance(): self { return new self(); } public function get(string $class): object { throw new \RuntimeException("down"); } }');
+
+		$this->assertTrue((new SiteCodeInstaller(new SettingsService()))->hasUnpublishedChanges());
+	}
 }

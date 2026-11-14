@@ -54,10 +54,12 @@ final class TrackerService {
 		}
 
 		$this->pending = false;
-		if (function_exists('fastcgi_finish_request')) {
-			fastcgi_finish_request();
-		}
-		$this->flush(100);
+		(new EventGuard())->run(function (): void {
+			if (function_exists('fastcgi_finish_request')) {
+				fastcgi_finish_request();
+			}
+			$this->flush(100);
+		}, [$this, 'recordError']);
 	}
 
 	private function client(): ?Client {
