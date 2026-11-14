@@ -167,6 +167,8 @@ Server event. The catalogue feed: sent through the PHP SDK when a product is sav
 | `query_id` | string | no | Search render the product came from; the browser tracker adds it from a click younger than 60 minutes, the sender may override it |
 | `list` | string | no | Where the product was found: `search`, `category`, `recommendation`, `assistant`, `direct` |
 
+The DJIA Builder adapter omits unit_price and currency when the page has no price for the product; reports take the price from product_upserted.
+
 #### product_removed_from_cart
 
 | Property | Type | Required | Meaning |
