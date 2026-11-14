@@ -31,6 +31,23 @@ final class SettingsTemplate {
 						</td>
 					</tr>
 					<tr>
+						<th scope="row"><label for="ci-public-key"><?php echo esc_html__('Public site key', 'ci-woocommerce'); ?></label></th>
+						<td><input type="text" id="ci-public-key" name="public_key" class="regular-text" autocomplete="off" value="<?php echo esc_attr($publicKey); ?>"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="ci-tracker-url"><?php echo esc_html__('Tracker URL', 'ci-woocommerce'); ?></label></th>
+						<td><input type="url" id="ci-tracker-url" name="tracker_url" class="regular-text" value="<?php echo esc_attr($trackerUrl); ?>"></td>
+					</tr>
+					<?php if ($snippet !== null) : ?>
+						<tr>
+							<th scope="row"><label for="ci-snippet"><?php echo esc_html__('Tracker snippet', 'ci-woocommerce'); ?></label></th>
+							<td>
+								<textarea id="ci-snippet" class="large-text code" rows="6" readonly><?php echo esc_textarea($snippet); ?></textarea>
+								<p class="description"><?php echo esc_html__('Paste into DJIA Builder, Site code, Body close', 'ci-woocommerce'); ?></p>
+							</td>
+						</tr>
+					<?php endif; ?>
+					<tr>
 						<th scope="row"><?php echo esc_html__('Last error', 'ci-woocommerce'); ?></th>
 						<td>
 							<?php if ($lastError === null) : ?>

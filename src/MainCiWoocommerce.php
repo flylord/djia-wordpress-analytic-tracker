@@ -4,12 +4,15 @@ declare(strict_types=1);
 namespace CiWoocommerce;
 
 use CiWoocommerce\Admin\Admin;
+use CiWoocommerce\Commands\SyncCatalogueCommand;
 use CiWoocommerce\Core\System\Container;
 use CiWoocommerce\Crons\FlushOutbox;
+use CiWoocommerce\Hooks\CatalogueHooks;
 use CiWoocommerce\Hooks\WooCommerceHooks;
 use CiWoocommerce\Migrations\CreateOutboxTable;
 use CiWoocommerce\Services\DatabaseMigrationService;
 use CiWoocommerce\Services\PluginService;
+use CiWoocommerce\Services\SiteCodeInstaller;
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 
 final class MainCiWoocommerce {
@@ -40,6 +43,7 @@ final class MainCiWoocommerce {
 
 		$this->hooks();
 		$this->crons();
+		$this->commands();
 	}
 
 	public function declare_hpos_compatibility(): void {
@@ -64,6 +68,16 @@ final class MainCiWoocommerce {
 		/* @var WooCommerceHooks $hooks */
 		$hooks = Container::getInstance()->get(WooCommerceHooks::class);
 		$hooks->init();
+
+		/* @var CatalogueHooks $catalogue */
+		$catalogue = Container::getInstance()->get(CatalogueHooks::class);
+		$catalogue->init();
+	}
+
+	private function commands(): void {
+		if (defined('WP_CLI') && WP_CLI) {
+			\WP_CLI::add_command('ci catalogue-sync', Container::getInstance()->get(SyncCatalogueCommand::class));
+		}
 	}
 
 	private function crons(): void {
@@ -78,6 +92,8 @@ final class MainCiWoocommerce {
 		/* @var FlushOutbox $flushOutbox */
 		$flushOutbox = Container::getInstance()->get(FlushOutbox::class);
 		$flushOutbox->schedule();
+
+		Container::getInstance()->get(SiteCodeInstaller::class)->install();
 	}
 
 	public function deactivate(): void {
@@ -86,5 +102,7 @@ final class MainCiWoocommerce {
 		/* @var FlushOutbox $flushOutbox */
 		$flushOutbox = Container::getInstance()->get(FlushOutbox::class);
 		$flushOutbox->unscheduleAll();
+
+		Container::getInstance()->get(SiteCodeInstaller::class)->uninstall();
 	}
 }

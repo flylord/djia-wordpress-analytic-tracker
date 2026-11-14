@@ -9,6 +9,8 @@ Requires PHP 7.4, WordPress 6.2, WooCommerce 7.0.
 1. In this folder run `composer install --no-dev`. The SDK is installed from Packagist into `vendor/`.
 2. Copy the folder `ci-woocommerce` into `wp-content/plugins/` (without `tests/`, `phpunit.xml`) and activate it.
 3. Open Settings, Commerce Intelligence and enter the collector URL (default `http://ci-collector:8080`), key id and secret. Until a key id and secret are saved, no event is recorded.
+4. Enter the public site key and tracker URL (for example `http://localhost:11404/t.v1.js`). With DJIA Builder active and a user who has `unfiltered_html`, saving writes the tracker into DJIA Builder global site code (item `ci-tracker`, body close) and publishes it. Otherwise the settings page shows the snippet to paste into DJIA Builder, Site code, Body close. Deactivating the plugin removes the item.
+5. Send the whole catalogue once: `wp ci catalogue-sync [--batch=<n>]`.
 
 ## How it works
 
@@ -30,6 +32,8 @@ Requires PHP 7.4, WordPress 6.2, WooCommerce 7.0.
 | `woocommerce_order_status_cancelled` | `order_cancelled` |
 | `woocommerce_order_refunded` | `order_refunded` |
 | `wp_login`, `user_register` | `user_identified` |
+| `woocommerce_new_product`, `woocommerce_update_product`, `woocommerce_product_set_stock`, `woocommerce_variation_set_stock` | `product_upserted` (published products only) |
+| `wp ci catalogue-sync` | `product_upserted` for every published product and variation |
 
 An order is marked with meta `_ci_order_completed_tracked` so `order_completed` is sent once per order.
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace CiWoocommerce\Services;
 
 use CiWoocommerce\Repositories\OutboxRepository;
+use CommerceIntelligence\Sdk\CatalogueSync;
 use CommerceIntelligence\Sdk\Client;
 use CommerceIntelligence\Sdk\Config;
 use CommerceIntelligence\Sdk\Event;
@@ -29,6 +30,12 @@ final class TrackerService {
 
 		$client->track($event);
 		$this->pending = true;
+	}
+
+	public function catalogueSync(int $batch = 100): ?CatalogueSync {
+		$client = $this->client();
+
+		return $client === null ? null : new CatalogueSync($client, $batch);
 	}
 
 	public function recordError(Throwable $error): void {
