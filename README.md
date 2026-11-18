@@ -27,6 +27,8 @@ Requires PHP 7.4, WordPress 6.2, WooCommerce 7.0.
 |---|---|
 | `woocommerce_add_to_cart` | `product_added_to_cart` |
 | `woocommerce_cart_item_removed` | `product_removed_from_cart` |
+| `template_redirect` on the cart page | `cart_viewed` (non empty cart, prefetch requests skipped) |
+| `template_redirect` on the checkout page | `checkout_started` (not on order received or order pay) |
 | `woocommerce_checkout_order_processed`, `woocommerce_store_api_checkout_order_processed` | `order_completed` |
 | `woocommerce_payment_complete` | `payment_confirmed` |
 | `woocommerce_order_status_cancelled` | `order_cancelled` |
@@ -307,6 +309,8 @@ Sent automatically on `pagehide` through `sendBeacon`. The last `page_left` of a
 | `filters` | object | yes | Filters after the change, filter name to value or list of values |
 | `result_count` | int | no | Number of results |
 
+The DJIA Builder adapter sends it on category pages when the active filters change; on search pages a filter change is a `search_performed` with `trigger` `filter` instead.
+
 #### cart_viewed
 
 | Property | Type | Required | Meaning |
@@ -315,6 +319,8 @@ Sent automatically on `pagehide` through `sendBeacon`. The last `page_left` of a
 | `total` | int | yes | Cart total as shown, including tax |
 | `currency` | string | yes | ISO code |
 
+The WooCommerce plugin sends it from the server when the cart page loads. A shop that sends it from the browser too must pick one side, or carts are counted twice.
+
 #### checkout_started
 
 | Property | Type | Required | Meaning |
@@ -322,6 +328,8 @@ Sent automatically on `pagehide` through `sendBeacon`. The last `page_left` of a
 | `items` | list of Item | yes | Cart lines |
 | `total` | int | yes | Cart total as shown, including tax |
 | `currency` | string | yes | ISO code |
+
+The WooCommerce plugin sends it from the server when the checkout page loads (not the order received or order pay pages). A shop that sends it from the browser too must pick one side.
 
 #### recommendation_clicked
 

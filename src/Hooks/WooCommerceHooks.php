@@ -6,6 +6,7 @@ namespace CiWoocommerce\Hooks;
 use CiWoocommerce\Services\EventGuard;
 use CiWoocommerce\Services\EventMapper;
 use CiWoocommerce\Services\TrackerService;
+use CommerceIntelligence\Sdk\Context;
 use CommerceIntelligence\Sdk\Visitor;
 use WC_Order;
 
@@ -34,7 +35,46 @@ final class WooCommerceHooks {
 		add_action('woocommerce_order_refunded', [$this, 'onOrderRefunded'], 10, 2);
 		add_action('wp_login', [$this, 'onLogin'], 10, 2);
 		add_action('user_register', [$this, 'onUserRegister'], 10, 1);
+		add_action('template_redirect', [$this, 'onTemplateRedirect'], 20, 0);
 		add_action('shutdown', [$this->tracker, 'flushIfPending'], 20);
+	}
+
+	public function onTemplateRedirect(): void {
+		$this->guard->run(function (): void {
+			$this->handleTemplateRedirect();
+		}, [$this->tracker, 'recordError']);
+	}
+
+	private function handleTemplateRedirect(): void {
+		$checkout = is_checkout() && !is_wc_endpoint_url('order-received') && !is_wc_endpoint_url('order-pay');
+		if ((!is_cart() && !$checkout) || $this->isPrefetch() || !WC()->cart || WC()->cart->is_empty()) {
+			return;
+		}
+
+		$items = [];
+		foreach (WC()->cart->get_cart() as $line) {
+			$quantity = max(1, (int) ($line['quantity'] ?? 1));
+			$items[] = [
+				'product_id' => (int) ($line['product_id'] ?? 0),
+				'variation_id' => (int) ($line['variation_id'] ?? 0),
+				'quantity' => $quantity,
+				'unit_price' => wc_format_decimal(((float) ($line['line_total'] ?? 0) + (float) ($line['line_tax'] ?? 0)) / $quantity, 6, false),
+			];
+		}
+
+		$this->tracker->track($this->mapper->cartStep(
+			$checkout,
+			$items,
+			wc_format_decimal(WC()->cart->get_total('edit'), false, false),
+			get_woocommerce_currency(),
+			Context::fromCookies(wp_unslash($_COOKIE), $this->mapper->customerId(get_current_user_id()))
+		));
+	}
+
+	private function isPrefetch(): bool {
+		$purpose = (string) ($_SERVER['HTTP_SEC_PURPOSE'] ?? $_SERVER['HTTP_PURPOSE'] ?? '');
+
+		return stripos($purpose, 'prefetch') !== false || stripos($purpose, 'prerender') !== false;
 	}
 
 	public function onAddToCart($cartItemKey, $productId, $quantity, $variationId): void {

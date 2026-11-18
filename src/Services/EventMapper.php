@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace CiWoocommerce\Services;
 
+use CommerceIntelligence\Sdk\Context;
 use CommerceIntelligence\Sdk\Event;
 use CommerceIntelligence\Sdk\Events;
 
@@ -98,6 +99,22 @@ final class EventMapper {
 		}
 
 		return Event::create('order_refunded', $properties, $anonymousId, $userId);
+	}
+
+	/**
+	 * @param array<int, array{product_id: int, variation_id: int, quantity: int, unit_price: string}> $items
+	 */
+	public function cartStep(bool $checkout, array $items, string $total, string $currency, Context $ctx): Event {
+		$mapped = [];
+		foreach ($items as $item) {
+			$mapped[] = array_merge($this->productIds((int) $item['product_id'], (int) $item['variation_id']), [
+				'quantity' => (int) $item['quantity'],
+				'unit_price' => Events::minorUnits((string) $item['unit_price'], $currency),
+			]);
+		}
+		$amount = Events::minorUnits($total, $currency);
+
+		return $checkout ? Events::checkoutStarted($mapped, $amount, $currency, $ctx) : Events::cartViewed($mapped, $amount, $currency, $ctx);
 	}
 
 	public function userIdentified(string $userId, ?string $anonymousId): Event {

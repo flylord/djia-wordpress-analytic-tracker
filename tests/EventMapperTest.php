@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CiWoocommerce\Tests;
 
 use CiWoocommerce\Services\EventMapper;
+use CommerceIntelligence\Sdk\Context;
 use PHPUnit\Framework\TestCase;
 
 final class EventMapperTest extends TestCase {
@@ -13,6 +14,26 @@ final class EventMapperTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->mapper = new EventMapper();
+	}
+
+	public function testCartStepBuildsCartViewedAndCheckoutStarted(): void {
+		$items = [['product_id' => 10, 'variation_id' => 0, 'quantity' => 2, 'unit_price' => '125.000000'], ['product_id' => 11, 'variation_id' => 12, 'quantity' => 1, 'unit_price' => '9.5']];
+		$ctx = new Context('aid-1', 'sid-1', '42', null);
+		$cart = $this->mapper->cartStep(false, $items, '259.50', 'RSD', $ctx)->toArray();
+		$checkout = $this->mapper->cartStep(true, $items, '259.50', 'RSD', $ctx)->toArray();
+
+		$this->assertSame('cart_viewed', $cart['event']);
+		$this->assertSame('checkout_started', $checkout['event']);
+		$this->assertSame('sid-1', $cart['session_id']);
+		$this->assertSame('42', $cart['user_id']);
+		$this->assertSame([
+			'items' => [
+				['product_id' => '10', 'quantity' => 2, 'unit_price' => 12500],
+				['product_id' => '11', 'variation_id' => '12', 'quantity' => 1, 'unit_price' => 950],
+			],
+			'total' => 25950,
+			'currency' => 'RSD',
+		], $cart['properties']);
 	}
 
 	public function testAddToCartOmitsZeroVariationAndSendsStringIds(): void {
